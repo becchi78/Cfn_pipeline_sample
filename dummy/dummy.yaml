@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Dummy Stack with a Single SSM Parameter
+
+Resources:
+  DummyParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /dummy/parameter
+      Type: String
+      Value: "This is a dummy parameter"
+      Description: "A dummy parameter for CI/CD pipeline stack"
+
+Outputs:
+  ParameterName:
+    Description: The name of the created SSM Parameter
+    Value: !Ref DummyParameter
