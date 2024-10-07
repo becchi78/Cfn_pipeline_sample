@@ -35,6 +35,31 @@ Resources:
                 Action:
                   - "codestar-connections:*"
                 Resource: "*"
+        - PolicyName: S3AccessForCodePipeline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                  - s3:PutObject
+                Resource:
+                  - !Sub arn:aws:s3:::${CodePipelineArtifactStoreName}
+                  - !Sub arn:aws:s3:::${CodePipelineArtifactStoreName}/*
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource:
+                  - !Sub arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/Cfn_networkstack_pipeline_sample_Codebuild
+                  - !Sub arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/Cfn_networkstack_pipeline_sample_DriftDetection
+
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
         - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
@@ -60,8 +85,8 @@ Resources:
                 Resource:
                   - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/Cfn_networkstack_pipeline_sample_Codebuild
                   - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/Cfn_networkstack_pipeline_sample_Codebuild:*
-                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/Cfn_networkstack_pipeline_sample_Codebuild-DriftDetection
-                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/Cfn_networkstack_pipeline_sample_Codebuild-DriftDetection:*
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/Cfn_networkstack_pipeline_sample_DriftDetection
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/Cfn_networkstack_pipeline_sample_DriftDetection:*
                 Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
@@ -70,6 +95,8 @@ Resources:
                 Resource:
                   - arn:aws:s3:::codepipeline-ap-northeast-1-*
                   - arn:aws:s3:::Cfn_networkstack_pipeline_sample/*
+                  - arn:aws:s3:::cfn-nested-sample
+                  - arn:aws:s3:::cfn-nested-sample/*
                 Action:
                   - s3:PutObject
                   - s3:GetObject
@@ -289,20 +316,12 @@ Resources:
                 ActionMode: CREATE_UPDATE
                 Capabilities: CAPABILITY_IAM,CAPABILITY_NAMED_IAM
                 RoleArn: !GetAtt CodePipelineServiceRole.Arn
-                StackName: NetworkStack
+                StackName: PipelineNetworkStack
                 TemplateConfiguration: SourceArtifact::param/parameters-pipeline.json
                 TemplatePath: SourceArtifact::root-template.yaml
               InputArtifacts:
                 - Name: SourceArtifact
               RunOrder: 1
-
-      TriggerConfiguration:
-        - TriggerType: Trigger
-          TriggerName: GitHubTrigger
-          TriggerParameters:
-            SourceActionName: Source
-            SourceType: CodeStarSource
-            GitBranchSpecifier: develop
 
 Outputs:
   PipelineUrl:

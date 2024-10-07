@@ -25,13 +25,13 @@ aws cloudformation create-stack \
 
 ## Pipeline 作成の手順
 
-### dummystack の作成
+### ダミースタック の作成
 
 Pipeline 作成時に作成対象のスタックが無いとドリフト検知と変更セットのステージ作成でエラーになるため、予めダミーのリソースを同名のスタックで作成しておく。
 
 ```bash
 aws cloudformation create-stack \
-  --stack-name NetworkStack \
+  --stack-name PipelineNetworkStack \
   --template-body file://dummy/dummy.yaml \
   --capabilities CAPABILITY_IAM
 ```
@@ -42,7 +42,7 @@ aws cloudformation create-stack \
 
 ```bash
 aws cloudformation update-stack \
-  --stack-name NetworkStack \
+  --stack-name PipelineNetworkStack \
   --template-body file://pipeline/networkstack-pipeline-sample.yaml \
   --parameters file://param/parameters-common.json \
   --capabilities CAPABILITY_IAM
