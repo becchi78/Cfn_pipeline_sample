@@ -45,7 +45,7 @@ aws cloudformation update-stack \
   --stack-name PipelineNetworkStack \
   --template-body file://pipeline/networkstack-pipeline-sample.yaml \
   --parameters file://param/parameters-common.json \
-  --capabilities CAPABILITY_IAM
+  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
 注意点：

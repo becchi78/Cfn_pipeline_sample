@@ -10,6 +10,9 @@ Parameters:
     Type: String
     Default: codepipeline-ap-northeast-1-691348252728
     Description: Name of the existing S3 bucket for CodePipeline artifacts
+  CodePipelineServiceRoleName:
+    Type: String
+    Default: Cfn_pipeline_sample_CodePipelineServiceRole
 
 Resources:
   CodePipelineServiceRole:
@@ -19,22 +22,21 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Sid: Statement1
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service:
                 - cloudformation.amazonaws.com
                 - codepipeline.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: AWSCodeConnectionsFullAccess
+        - PolicyName: AWSCodeConnectionsAccess
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - "codestar-connections:*"
-                Resource: "*"
+                  - "codestar-connections:UseConnection"
+                Resource: !Ref CodeStarConnectionArn
         - PolicyName: S3AccessForCodePipeline
           PolicyDocument:
             Version: "2012-10-17"
@@ -59,10 +61,41 @@ Resources:
                 Resource:
                   - !Sub arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/Cfn_networkstack_pipeline_sample_Codebuild
                   - !Sub arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/Cfn_networkstack_pipeline_sample_DriftDetection
+        - PolicyName: CloudFormationAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:SetStackPolicy
+                  - cloudformation:ValidateTemplate
+                Resource:
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/NetworkStack/*
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*
 
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
-        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+  CodePipelineServiceRolePassRolePolicy:
+    Type: AWS::IAM::Policy
+    DependsOn: CodePipelineServiceRole
+    Properties:
+      PolicyName: SelfPassRolePolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: iam:PassRole
+            Resource:
+              - !GetAtt CodePipelineServiceRole.Arn
+              - !GetAtt CodeBuildServiceRole.Arn
+      Roles:
+        - !Ref CodePipelineServiceRole
 
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
@@ -94,15 +127,17 @@ Resources:
               - Effect: Allow
                 Resource:
                   - arn:aws:s3:::codepipeline-ap-northeast-1-*
-                  - arn:aws:s3:::Cfn_networkstack_pipeline_sample/*
-                  - arn:aws:s3:::cfn-nested-sample
-                  - arn:aws:s3:::cfn-nested-sample/*
+                  - arn:aws:s3:::cfn-networkstack-pipeline-sample
+                  - arn:aws:s3:::cfn-networkstack-pipeline-sample/*
                 Action:
                   - s3:PutObject
                   - s3:GetObject
                   - s3:GetObjectVersion
                   - s3:GetBucketAcl
                   - s3:GetBucketLocation
+                  - s3:GetBucketVersioning
+                  - s3:GetEncryptionConfiguration
+                  - s3:GetBucketPublicAccessBlock
               - Effect: Allow
                 Action:
                   - codestar-connections:UseConnection
@@ -152,7 +187,7 @@ Resources:
   NestedStackBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: cfn-networkstack-pipeline-sample-nestedtemplate
+      BucketName: cfn-networkstack-pipeline-sample
       VersioningConfiguration:
         Status: Enabled
       BucketEncryption:
@@ -217,6 +252,9 @@ Resources:
 
   CfnSamplePipeline:
     Type: AWS::CodePipeline::Pipeline
+    DependsOn:
+      - CodePipelineServiceRole
+      - CodePipelineServiceRolePassRolePolicy
     Properties:
       Name: Cfn_networkstack_pipeline_sample_pipeline
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
@@ -236,7 +274,7 @@ Resources:
                 Version: "1"
               Configuration:
                 ConnectionArn: !Ref CodeStarConnectionArn
-                FullRepositoryId: becchi78/Cfn_networkstack_sample
+                FullRepositoryId: becchi78/Cfn_pipeline_networkstack_sample
                 BranchName: develop
                 DetectChanges: "true"
                 OutputArtifactFormat: CODE_ZIP
