@@ -1,0 +1,187 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CodePipeline and CodeBuild resources for Cfn_networkstack_pipeline_sample
+
+Parameters:
+  CodeStarConnectionArn:
+    Type: String
+    Description: ARN of the CodeStar connection
+    Default: arn:aws:codeconnections:ap-northeast-1:571634110936:connection/55c4e111-e74c-43c0-881d-e93c4fc6e41b
+  CodePipelineArtifactStoreName:
+    Type: String
+    Default: codepipeline-ap-northeast-1-691348252728
+    Description: Name of the existing S3 bucket for CodePipeline artifacts
+  IAMStackName:
+    Type: String
+    Description: Name of the IAM stack
+    Default: PipelineNetworkStack-IamStack
+
+Resources:
+  CodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: Cfn_networkstack_pipeline_sample_Codebuild
+      Description: CodeBuild project for Cfn_networkstack_pipeline_sample
+      ServiceRole: !ImportValue
+        Fn::Sub: "${IAMStackName}-CodeBuildServiceRoleArn"
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yml
+      TimeoutInMinutes: 60
+      QueuedTimeoutInMinutes: 480
+      EncryptionKey: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+        S3Logs:
+          Status: DISABLED
+
+  CodeBuildDriftDetection:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: Cfn_networkstack_pipeline_sample_DriftDetection
+      Description: CodeBuild project for drift detection of Cfn_networkstack_pipeline_sample
+      ServiceRole: !ImportValue
+        Fn::Sub: "${IAMStackName}-CodeBuildServiceRoleArn"
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec_driftdetection.yml
+      TimeoutInMinutes: 60
+      QueuedTimeoutInMinutes: 480
+      EncryptionKey: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+        S3Logs:
+          Status: DISABLED
+
+  CfnSamplePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: Cfn_networkstack_pipeline_sample_pipeline
+      RoleArn: !ImportValue
+        Fn::Sub: "${IAMStackName}-CodePipelineServiceRoleArn"
+      ArtifactStore:
+        Type: S3
+        Location: !Ref CodePipelineArtifactStoreName
+      PipelineType: V2
+      ExecutionMode: QUEUED
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: "1"
+              Configuration:
+                ConnectionArn: !Ref CodeStarConnectionArn
+                FullRepositoryId: becchi78/Cfn_pipeline_networkstack_sample
+                BranchName: develop
+                DetectChanges: "true"
+                OutputArtifactFormat: CODE_ZIP
+              OutputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref CodeBuild
+              InputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+
+        - Name: DriftDetection
+          Actions:
+            - Name: DriftDetection
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref CodeBuildDriftDetection
+              InputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+
+        - Name: ChangeSets
+          Actions:
+            - Name: ChangeSets
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                Capabilities: CAPABILITY_IAM,CAPABILITY_NAMED_IAM
+                ChangeSetName: ChangeSets-PipelineNetworkStack
+                RoleArn: !ImportValue
+                  Fn::Sub: "${IAMStackName}-CodePipelineServiceRoleArn"
+                StackName: PipelineNetworkStack
+                TemplateConfiguration: SourceArtifact::param/parameters-pipeline.json
+                TemplatePath: SourceArtifact::root-template.yaml
+              InputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+
+        - Name: Approval
+          Actions:
+            - Name: Approval
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: "1"
+              Configuration:
+                CustomData: Please review the changes before proceeding with the changeset.
+              RunOrder: 1
+
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: ChangeSets-PipelineNetworkStack
+                RoleArn: !ImportValue
+                  Fn::Sub: "${IAMStackName}-CodePipelineServiceRoleArn"
+                StackName: PipelineNetworkStack
+              RunOrder: 1
+
+Outputs:
+  CodeBuildProjectName:
+    Description: Name of the CodeBuild Project
+    Value: !Ref CodeBuild
+  CodeBuildDriftDetectionProjectName:
+    Description: Name of the CodeBuild Drift Detection Project
+    Value: !Ref CodeBuildDriftDetection
+  CodePipelineName:
+    Description: Name of the CodePipeline
+    Value: !Ref CfnSamplePipeline

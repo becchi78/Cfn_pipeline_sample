@@ -3,8 +3,6 @@
 以下の CodePipeline を作成するサンプルコードです。
 
 - NetworkStack
-- SecurityStack
-- Ec2Stack
 
 ## 初回作成時の手順
 
@@ -12,15 +10,22 @@
 
 CodePipeline で共通で使用する以下のリソースを作成する。
 
-- CodePipeline と CodeBuild の IAM role/policies
-- サブスタック用と Artifact 用の S3
+- サブスタック用の S3 Bucket
 
 ```bash
 aws cloudformation create-stack \
-  --stack-name PipelineCommmonResouceStack \
-  --template-body file://common/common.yaml \
-  --parameters file://param/parameters-common.json \
+  --stack-name PipelineNetworkStack-S3Stack \
+  --template-body file://common/pipeline_s3.yaml \
   --capabilities CAPABILITY_IAM
+```
+
+- CodePipeline と CodeBuild の IAM role/policies
+
+```bash
+aws cloudformation create-stack \
+  --stack-name PipelineNetworkStack-IamStack \
+  --template-body file://common/pipeline_iam.yaml \
+  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
 ## Pipeline 作成の手順
@@ -38,14 +43,27 @@ aws cloudformation create-stack \
 
 ### Pipeline の作成
 
-ダミーリソースと同名で目的のスタックをデプロイする。
+CICDスタックをデプロイする。
 
 ```bash
-aws cloudformation update-stack \
-  --stack-name PipelineNetworkStack \
-  --template-body file://pipeline/networkstack-pipeline-sample.yaml \
-  --parameters file://param/parameters-common.json \
+aws cloudformation create-stack \
+  --stack-name PipelineNetworkStack-CicdStack \
+  --template-body file://pipeline/pipeline_networkstack_sample.yaml \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+```
+
+## 削除
+
+```bash
+aws cloudformation delete-stack --stack-name PipelineNetworkStack-S3Stack
+```
+
+```bash
+aws cloudformation delete-stack --stack-name PipelineNetworkStack-IamStack
+```
+
+```bash
+aws cloudformation delete-stack --stack-name PipelineNetworkStack-CicdStack
 ```
 
 注意点：

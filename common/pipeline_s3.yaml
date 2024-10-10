@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: NestedStack S3 resources for Cfn_pipeline_sample
+
+Resources:
+  NestedStackBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: cfn-pipeline-nestedstack-sample
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+Outputs:
+  NestedStackBucketName:
+    Description: Name of the S3 bucket for nested stacks
+    Value: !Ref NestedStackBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-NestedStackBucketName"
