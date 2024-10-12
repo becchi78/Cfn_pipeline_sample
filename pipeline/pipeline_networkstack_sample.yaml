@@ -19,8 +19,8 @@ Resources:
   CodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: Cfn_networkstack_pipeline_sample_Codebuild
-      Description: CodeBuild project for Cfn_networkstack_pipeline_sample
+      Name: Cfn_networkstack_pipeline_sample_UploadNestedStacks
+      Description: CodeBuild project for Upload Nested Stacks of Cfn_networkstack_pipeline_sample
       ServiceRole: !ImportValue
         Fn::Sub: "${IAMStackName}-CodeBuildServiceRoleArn"
       Artifacts:
@@ -98,9 +98,9 @@ Resources:
                 - Name: SourceArtifact
               RunOrder: 1
 
-        - Name: Build
+        - Name: UploadNestedStacks
           Actions:
-            - Name: Build
+            - Name: UploadNestedStacks
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -141,7 +141,7 @@ Resources:
                 RoleArn: !ImportValue
                   Fn::Sub: "${IAMStackName}-CodePipelineServiceRoleArn"
                 StackName: PipelineNetworkStack
-                TemplateConfiguration: SourceArtifact::param/parameters-pipeline.json
+                TemplateConfiguration: SourceArtifact::param/parameters.json
                 TemplatePath: SourceArtifact::root-template.yaml
               InputArtifacts:
                 - Name: SourceArtifact
