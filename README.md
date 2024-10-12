@@ -15,7 +15,7 @@ CodePipeline で共通で使用する以下のリソースを作成する。
 ```bash
 aws cloudformation deploy \
   --stack-name PipelineNetworkStack-S3Stack \
-  --template-file file://common/pipeline_s3.yaml \
+  --template-file common/pipeline_s3.yaml \
   --capabilities CAPABILITY_IAM
 ```
 
