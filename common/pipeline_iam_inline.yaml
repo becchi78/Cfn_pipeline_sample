@@ -1,0 +1,289 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: IAM resources for Cfn_networkstack_pipeline_sample
+
+Parameters:
+  CodeStarConnectionArn:
+    Type: String
+    Description: ARN of the CodeStar connection
+    Default: arn:aws:codeconnections:ap-northeast-1:571634110936:connection/55c4e111-e74c-43c0-881d-e93c4fc6e41b
+  CodePipelineArtifactStoreName:
+    Type: String
+    Default: codepipeline-ap-northeast-1-691348252728
+    Description: Name of the existing S3 bucket for CodePipeline artifacts
+  IAMStackName:
+    Type: String
+    Description: Name of the IAM stack
+    Default: PipelineIAMStack
+
+Resources:
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Cfn_pipeline_sample_CodePipelineServiceRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+                - codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AWSCodeConnectionsAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "codestar-connections:UseConnection"
+                Resource: !Ref CodeStarConnectionArn
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource:
+                  - !Sub arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/*
+        - PolicyName: CloudFormationAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStacks
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:SetStackPolicy
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:DescribeStackEvents
+                Resource: !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                  - s3:PutObject
+                  - s3:GetBucketAcl
+                  - s3:GetBucketLocation
+                  - s3:GetEncryptionConfiguration
+                  - s3:GetBucketPublicAccessBlock
+                Resource:
+                  - !Sub arn:aws:s3:::${CodePipelineArtifactStoreName}
+                  - !Sub arn:aws:s3:::${CodePipelineArtifactStoreName}/*
+                  - arn:aws:s3:::codepipeline-ap-northeast-1-*
+                  - arn:aws:s3:::cfn-pipeline-nestedstack-sample
+                  - arn:aws:s3:::cfn-pipeline-nestedstack-sample/*
+        - PolicyName: CodePipeline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codepipeline:DeletePipeline
+                  - codepipeline:GetPipeline
+                  - codepipeline:GetPipelineState
+                  - codebuild:DeleteProject
+                  - codepipeline:ListTagsForResource
+                Resource:
+                  - !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:*"
+                  - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:*"
+        - PolicyName: EC2VPCAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:CreateVpc
+                  - ec2:DeleteVpc
+                  - ec2:ModifyVpcAttribute
+                  - ec2:DescribeVpcAttribute
+                  - ec2:CreateSubnet
+                  - ec2:DeleteSubnet
+                  - ec2:ModifySubnetAttribute
+                  - ec2:DescribeVpcs
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeAvailabilityZones
+                  - ec2:CreateTags
+                  - ec2:DeleteTags
+                Resource: "*"
+        - PolicyName: DummyParameter
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                  - ssm:DeleteParameter
+                Resource: arn:aws:ssm:ap-northeast-1:571634110936:parameter/dummy/parameter
+        - PolicyName: IAMAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: "*"
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Cfn_pipeline_sample_CodeBuildServiceRole
+      Path: /service-role/
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CloudWatchLogsAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Resource:
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*:*
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Resource:
+                  - arn:aws:s3:::codepipeline-ap-northeast-1-*
+                  - arn:aws:s3:::cfn-pipeline-nestedstack-sample
+                  - arn:aws:s3:::cfn-pipeline-nestedstack-sample/*
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketAcl
+                  - s3:GetBucketLocation
+                  - s3:GetBucketVersioning
+                  - s3:GetEncryptionConfiguration
+                  - s3:GetBucketPublicAccessBlock
+        - PolicyName: CodeStarConnectionsAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codestar-connections:UseConnection
+                Resource:
+                  - !Ref CodeStarConnectionArn
+        - PolicyName: CodeBuildReportAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codebuild:CreateReportGroup
+                  - codebuild:CreateReport
+                  - codebuild:UpdateReport
+                  - codebuild:BatchPutTestCases
+                  - codebuild:BatchPutCodeCoverages
+                Resource:
+                  - !Sub arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/*
+        - PolicyName: CloudFormationAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:DetectStackResourceDrift
+                  - cloudformation:ListStackResources
+                Resource: !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStackDriftDetectionStatus
+                  - cloudformation:DetectStackDrift
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:DescribeStackResourceDrifts
+                  - cloudformation:DetectStackResourceDrift
+                  - cloudformation:DescribeStackEvents
+                Resource: "*"
+        - PolicyName: EC2DescribeAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeVpcs
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeInstances
+                  - ec2:DescribeNetworkAcls
+                  - ec2:DescribeRouteTables
+                  - ec2:DescribeVpcAttribute
+                Resource: "*"
+        - PolicyName: DummyParameter
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameters
+                Resource: arn:aws:ssm:ap-northeast-1:571634110936:parameter/dummy/parameter
+        - PolicyName: CodeConnectionsAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: codeconnections:GetConnectionToken
+                Resource: arn:aws:codeconnections:ap-northeast-1:571634110936:connection/2806d84f-9c49-469e-a777-a7c27028bde4
+        - PolicyName: CodePipelineAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codepipeline:GetPipeline
+                  - codepipeline:GetPipelineState
+                  - codepipeline:ListTagsForResource
+                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:*"
+
+  CodePipelineServiceRolePassRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: SelfPassRolePolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: iam:PassRole
+            Resource:
+              - !GetAtt CodePipelineServiceRole.Arn
+              - !GetAtt CodeBuildServiceRole.Arn
+      Roles:
+        - !Ref CodePipelineServiceRole
+
+Outputs:
+  CodePipelineServiceRoleArn:
+    Description: ARN of the CodePipeline Service Role
+    Value: !GetAtt CodePipelineServiceRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-CodePipelineServiceRoleArn"
+  CodeBuildServiceRoleArn:
+    Description: ARN of the CodeBuild Service Role
+    Value: !GetAtt CodeBuildServiceRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-CodeBuildServiceRoleArn"
