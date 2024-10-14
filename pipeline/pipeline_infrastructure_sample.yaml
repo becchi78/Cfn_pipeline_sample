@@ -1,26 +1,32 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: CodePipeline and CodeBuild resources for Cfn_networkstack_pipeline_sample
+Description: CodePipeline and CodeBuild resources for Cfn_${StackName}_pipeline_sample
 
 Parameters:
+  StackName:
+    Type: String
+    Description: Name of the stack to be created/updated by this pipeline
   CodeStarConnectionArn:
     Type: String
     Description: ARN of the CodeStar connection
-    Default: arn:aws:codeconnections:ap-northeast-1:571634110936:connection/55c4e111-e74c-43c0-881d-e93c4fc6e41b
   CodePipelineArtifactStoreName:
     Type: String
-    Default: codepipeline-ap-northeast-1-691348252728
     Description: Name of the existing S3 bucket for CodePipeline artifacts
   IAMStackName:
     Type: String
     Description: Name of the IAM stack
-    Default: PipelineNetworkStack-IamStack
+  RepositoryId:
+    Type: String
+    Description: Full repository ID for CodeStar connection
+  BranchName:
+    Type: String
+    Description: Branch name for source code
 
 Resources:
   CodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: Cfn_networkstack_pipeline_sample_UploadNestedStacks
-      Description: CodeBuild project for Upload Nested Stacks of Cfn_networkstack_pipeline_sample
+      Name: !Sub Cfn_${StackName}_pipeline_sample_UploadNestedStacks
+      Description: CodeBuild project for Upload Nested Stacks of Cfn_${StackName}_pipeline_sample
       ServiceRole: !ImportValue
         Fn::Sub: "${IAMStackName}-CodeBuildServiceRoleArn"
       Artifacts:
@@ -45,8 +51,8 @@ Resources:
   CodeBuildDriftDetection:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: Cfn_networkstack_pipeline_sample_DriftDetection
-      Description: CodeBuild project for drift detection of Cfn_networkstack_pipeline_sample
+      Name: !Sub Cfn_${StackName}_pipeline_sample_DriftDetection
+      Description: CodeBuild project for drift detection of Cfn__pipeline_sample
       ServiceRole: !ImportValue
         Fn::Sub: "${IAMStackName}-CodeBuildServiceRoleArn"
       Artifacts:
@@ -71,7 +77,7 @@ Resources:
   CfnSamplePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      Name: Cfn_networkstack_pipeline_sample_pipeline
+      Name: !Sub Cfn_${StackName}_pipeline_sample_pipeline
       RoleArn: !ImportValue
         Fn::Sub: "${IAMStackName}-CodePipelineServiceRoleArn"
       ArtifactStore:
@@ -90,8 +96,8 @@ Resources:
                 Version: "1"
               Configuration:
                 ConnectionArn: !Ref CodeStarConnectionArn
-                FullRepositoryId: becchi78/Cfn_pipeline_networkstack_sample
-                BranchName: develop
+                FullRepositoryId: !Ref RepositoryId
+                BranchName: !Ref BranchName
                 DetectChanges: "true"
                 OutputArtifactFormat: CODE_ZIP
               OutputArtifacts:
@@ -137,10 +143,10 @@ Resources:
               Configuration:
                 ActionMode: CHANGE_SET_REPLACE
                 Capabilities: CAPABILITY_IAM,CAPABILITY_NAMED_IAM
-                ChangeSetName: ChangeSets-PipelineNetworkStack
+                ChangeSetName: !Sub "ChangeSets-${StackName}"
                 RoleArn: !ImportValue
                   Fn::Sub: "${IAMStackName}-CodePipelineServiceRoleArn"
-                StackName: PipelineNetworkStack
+                StackName: !Ref StackName
                 TemplateConfiguration: SourceArtifact::param/parameters.json
                 TemplatePath: SourceArtifact::root-template.yaml
               InputArtifacts:
@@ -169,10 +175,10 @@ Resources:
                 Version: "1"
               Configuration:
                 ActionMode: CHANGE_SET_EXECUTE
-                ChangeSetName: ChangeSets-PipelineNetworkStack
+                ChangeSetName: !Sub "ChangeSets-${StackName}"
                 RoleArn: !ImportValue
                   Fn::Sub: "${IAMStackName}-CodePipelineServiceRoleArn"
-                StackName: PipelineNetworkStack
+                StackName: !Ref StackName
               RunOrder: 1
 
 Outputs:
