@@ -109,13 +109,13 @@ aws cloudformation deploy \
 
 リソースの削除時は以下のコマンドを実行します。
 
-````bash
+```bash
 aws cloudformation delete-stack --stack-name PipelineS3Stack
 ```
 
 ```bash
 aws cloudformation delete-stack --stack-name PipelineIamStack
-````
+```
 
 ```bash
 aws cloudformation delete-stack --stack-name PipelineNetworkStack
@@ -125,7 +125,7 @@ aws cloudformation delete-stack --stack-name PipelineNetworkStack
 aws cloudformation delete-stack --stack-name PipelineNetworkStack-CicdStack
 ```
 
-## 注意点：
+## 注意点
 
 1. S3 バケット名は固定されています。既存のバケットと競合しないように注意してください。
 2. CodePipelineArtifactStoreName は自動的に`codepipeline-ap-northeast-1-691348252728`が使用されます。Codepipeline が未実行の場合はこの Bucket が存在しないので、あらかじめ作成する方がいいかもしれません。（勝手に作成されるかも）
