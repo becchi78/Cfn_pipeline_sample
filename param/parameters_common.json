@@ -1,0 +1,10 @@
+{
+  "Parameters": {
+    "CodeStarConnectionArn": "arn:aws:codeconnections:ap-northeast-1:571634110936:connection/55c4e111-e74c-43c0-881d-e93c4fc6e41b",
+    "CodePipelineArtifactStoreName": "codepipeline-ap-northeast-1-691348252728",
+    "IAMStackName": "PipelineIAMStack",
+    "CodePipelineServiceRoleName": "Cfn_pipeline_sample_CodePipelineServiceRole",
+    "CodeBuildServiceRoleName": "Cfn_pipeline_sample_CodeBuildServiceRole",
+    "SSMParameterArn": "arn:aws:ssm:ap-northeast-1:571634110936:parameter/dummy/parameter"
+  }
+}

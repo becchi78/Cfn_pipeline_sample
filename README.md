@@ -1,8 +1,59 @@
 # Cfn_pipeline_sample
 
-以下の CodePipeline を作成するサンプルコードです。
+AWS CloudFormation を使用して CI/CD パイプラインを自動デプロイするためのサンプルコードです。
+CodePipeline、CodeBuild、S3 Bucket、IAM リソースをデプロイします。
 
-- NetworkStack
+現在は以下のスタックをデプロイするコードが格納されています。
+
+- インフラストラクチャースタック
+  - NetworkStack
+
+## 構成
+
+```bash
+Cfn_pipeline_sample/
+│
+├── common/
+│   │── pipeline_iam_inline.yaml ・・・パイプライン実行に必要なIAMを作成するテンプレート（インラインで詳細に記述した版）
+│   │── pipeline_iam.yaml ・・・パイプライン実行に必要なIAMを作成するテンプレート（AWS管理ポリシーを使用した版）
+│   └── pipeline_s3.yaml ・・・パイプライン実行に必要なS3を作成するテンプレート
+│
+├── dummy/
+│   └── dummy.yaml ・・・ダミーリソースを作成するテンプレート
+│
+├── param/
+│   │── parameters_common.json ・・・pipeline_iam.yamlで使用するパラメータファイル
+│   └── parameters_networkstack.json ・・・NetworkStackを作成するためのパラメータファイル
+│
+├── pipeline/
+│   └── pipeline_infrastructure_sample.yaml ・・・インフラストラクチャスタックのCI/CDパイプラインを作成するためのテンプレート
+└── README.md ・・・このREADME
+```
+
+## 前提条件
+
+このコードを使用するための前提条件は以下の通りです。
+
+- AWS アカウント
+- AWS CLI
+- Git
+- 作成するリソースのテンプレートファイル
+
+## セットアップ
+
+1. このレポジトリをクローンします。
+
+   ```bash
+   git clone https://github.com/yourusername/Cfn_pipeline_sample.git
+   cd Cfn_pipeline_sample
+   ```
+
+2. param/parameters_networkstack.json ファイルを編集し、必要なパラメータを設定します。
+3. AWS CLI が正しく設定されていることを確認します：
+
+   ```bash
+   aws configure
+   ```
 
 ## 初回作成時の手順
 
@@ -14,7 +65,7 @@ CodePipeline で共通で使用する以下のリソースを作成する。
 
 ```bash
 aws cloudformation deploy \
-  --stack-name PipelineNetworkStack-S3Stack \
+  --stack-name PipelineS3Stack \
   --template-file common/pipeline_s3.yaml \
   --capabilities CAPABILITY_IAM
 ```
@@ -23,9 +74,10 @@ aws cloudformation deploy \
 
 ```bash
 aws cloudformation deploy \
-  --stack-name PipelineNetworkStack-IamStack \
+  --stack-name PipelineIamStack \
   --template-file common/pipeline_iam.yaml \
-  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+  --parameter-overrides file://param/parameters_common.json \
+  --capabilities CAPABILITY_NAMED_IAM
 ```
 
 ## Pipeline 作成の手順
@@ -47,27 +99,33 @@ CICD スタックをデプロイする。
 
 ```bash
 aws cloudformation deploy \
-  --stack-name PipelineNetworkStack-CicdStack \
-  --template-file pipeline/pipeline_networkstack_sample.yaml \
+  --stack-name Pipeline-NetworkStack-CicdStack \
+  --template-file pipeline/pipeline_infrastructure_sample.yaml \
+  --parameter-overrides file://param/parameters_networkstack.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
 ## 削除
 
+リソースの削除時は以下のコマンドを実行します。
+
 ```bash
-aws cloudformation delete-stack --stack-name PipelineNetworkStack-S3Stack
+aws cloudformation delete-stack --stack-name PipelineS3Stack
 ```
 
 ```bash
-aws cloudformation delete-stack --stack-name PipelineNetworkStack-IamStack
+aws cloudformation delete-stack --stack-name PipelineIamStack
+```
+
+```bash
+aws cloudformation delete-stack --stack-name PipelineNetworkStack
 ```
 
 ```bash
 aws cloudformation delete-stack --stack-name PipelineNetworkStack-CicdStack
 ```
 
-注意点：
+## 注意点
 
-このテンプレートは既存のリソースを置き換えるものです。既存のリソースを保持したい場合は、テンプレートの適用前に必要な調整を行ってください。
-CodeStarConnectionArn はパラメータとして定義されていますが、デフォルト値が設定されています。必要に応じて、このパラメータ値を変更してください。
-S3 バケット名は固定されています。既存のバケットと競合しないように注意してください。
+1. S3 バケット名は固定されています。既存のバケットと競合しないように注意してください。
+2. CodePipelineArtifactStoreName は自動的に`codepipeline-ap-northeast-1-691348252728`が使用されます。Codepipeline が未実行の場合はこの Bucket が存在しないので、あらかじめ作成する方がいいかもしれません。（勝手に作成されるかも）
