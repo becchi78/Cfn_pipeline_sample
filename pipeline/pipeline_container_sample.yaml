@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudFormation template for Container Stack Pipeline"
+
+Parameters:
+  StackName:
+    Type: String
+    Description: Name of the stack to be created/updated by this pipeline
+  CodeStarConnectionArn:
+    Type: String
+    Description: ARN of the CodeStar connection
+  CodePipelineArtifactStoreName:
+    Type: String
+    Description: Name of the existing S3 bucket for CodePipeline artifacts
+  IAMStackName:
+    Type: String
+    Description: Name of the IAM stack
+  RepositoryId:
+    Type: String
+    Description: Full repository ID for CodeStar connection
+  BranchName:
+    Type: String
+    Description: Branch name for source code
+
+Resources:
+  CodeBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub Cfn_${StackName}_pipeline_sample_dockerbuild
+      Description: CodeBuild project for docker build of Cfn_${StackName}_pipeline_sample
+      ServiceRole: !ImportValue
+        Fn::Sub: "${IAMStackName}-CodeBuildServiceRoleArn"
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        ImagePullCredentialsType: CODEBUILD
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yml
+      TimeoutInMinutes: 60
+      QueuedTimeoutInMinutes: 480
+      EncryptionKey: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+        S3Logs:
+          Status: DISABLED
+
+  CfnSamplePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: !Sub Cfn_${StackName}_sample_pipeline
+      RoleArn: !ImportValue
+        Fn::Sub: "${IAMStackName}-CodePipelineServiceRoleArn"
+      ArtifactStore:
+        Type: S3
+        Location: !Ref CodePipelineArtifactStoreName
+      PipelineType: V2
+      ExecutionMode: QUEUED
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: "1"
+              Configuration:
+                ConnectionArn: !Ref CodeStarConnectionArn
+                FullRepositoryId: !Ref RepositoryId
+                BranchName: !Ref BranchName
+                DetectChanges: "true"
+                OutputArtifactFormat: CODE_ZIP
+              OutputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: ECS
+                Version: "1"
+              Configuration:
+                ClusterName: "test-cluster"
+                ServiceName: "PipelineService"
+                FileName: "imagedefinitions.json"
+                DeploymentTimeout: 5
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1

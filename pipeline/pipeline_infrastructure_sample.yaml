@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: CodePipeline and CodeBuild resources for Cfn_${StackName}_pipeline_sample
+Description: "CloudFormation template for Infrastructure Stack Pipeline"
 
 Parameters:
   StackName:
@@ -77,7 +77,7 @@ Resources:
   CfnSamplePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      Name: !Sub Cfn_${StackName}_pipeline_sample_pipeline
+      Name: !Sub Cfn_${StackName}_sample_pipeline
       RoleArn: !ImportValue
         Fn::Sub: "${IAMStackName}-CodePipelineServiceRoleArn"
       ArtifactStore:
