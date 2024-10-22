@@ -105,6 +105,14 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
+```bash
+aws cloudformation deploy \
+  --stack-name Pipeline-ContainerStack-CicdStack \
+  --template-file pipeline/pipeline_container_sample.yaml \
+  --parameter-overrides file://param/parameters_containerstack.json \
+  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+```
+
 ## 削除
 
 リソースの削除時は以下のコマンドを実行します。
@@ -123,6 +131,10 @@ aws cloudformation delete-stack --stack-name PipelineNetworkStack
 
 ```bash
 aws cloudformation delete-stack --stack-name PipelineNetworkStack-CicdStack
+```
+
+```bash
+aws cloudformation delete-stack --stack-name Pipeline-ContainerStack-CicdStack
 ```
 
 ## 注意点
