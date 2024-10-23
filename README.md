@@ -101,7 +101,7 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-## インフラ（ネットワークスタック、セキュリティスタック）
+## インフラ（ネットワークスタック、セキュリティスタック）パイプライン
 
 ### ダミースタック の作成
 
@@ -127,7 +127,7 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
-# コンテナスタック
+## コンテナパイプラインスタック
 
 以下のコマンドでコンテナパイプラインスタックを作成します。
 
