@@ -5,8 +5,9 @@ CodePipeline、CodeBuild、S3 Bucket、IAM リソースをデプロイします�
 
 現在は以下のスタックをデプロイするコードが格納されています。
 
-- インフラストラクチャースタック
-  - NetworkStack
+- インフラ
+  - ネットワークスタック
+- コンテナスタック
 
 ## 構成
 
@@ -23,23 +24,49 @@ Cfn_pipeline_sample/
 │
 ├── param/
 │   │── parameters_common.json ・・・pipeline_iam.yamlで使用するパラメータファイル
-│   └── parameters_networkstack.json ・・・NetworkStackを作成するためのパラメータファイル
+│   │── parameters_containerstack.json ・・・コンテナスタックを作成するためのパラメータファイル
+│   └── parameters_networkstack.json ・・・ネットワークスタックを作成するためのパラメータファイル
 │
 ├── pipeline/
-│   └── pipeline_infrastructure_sample.yaml ・・・インフラストラクチャスタックのCI/CDパイプラインを作成するためのテンプレート
+│   │── pipeline_container_sample.yaml ・・・コンテナスタックのCI/CDパイプラインを作成するためのテンプレート
+│   └── pipeline_infrastructure_sample.yaml ・・・インフラ（ネットワークスタックやIAMスタックなど）のCI/CDパイプラインを作成するためのテンプレート
 └── README.md ・・・このREADME
 ```
+
+(補足)
+pipeline_infrastructure_sample.yaml にネットワークスタックやセキュリティスタックのパラメータファイル（json）を与えることで、サーバレススタックやコンテナスタック以外のパイプラインを作成することができます。
 
 ## 前提条件
 
 このコードを使用するための前提条件は以下の通りです。
 
+### 全般
+
 - AWS アカウント
 - AWS CLI
 - Git
-- 作成するリソースのテンプレートファイル
 
-## セットアップ
+### インフラ
+
+- 作成するスタックのテンプレートファイル
+
+### コンテナスタック
+
+- コンテナビルド用のファイル一式
+  - Dockerfile
+  - buildspec.yml
+  - アプリケーションコード
+  - その他
+- ECS
+  - クラスター
+  - タスク定義
+  - サービス
+
+## 初回作成時の手順
+
+CodePipeline で共通で使用するリソースを作成します。
+
+### セットアップ
 
 1. このレポジトリをクローンします。
 
@@ -48,20 +75,14 @@ Cfn_pipeline_sample/
    cd Cfn_pipeline_sample
    ```
 
-2. param/parameters_networkstack.json ファイルを編集し、必要なパラメータを設定します。
-3. AWS CLI が正しく設定されていることを確認します：
+2. param ディレクトリ下にパラメータファイルを編集し、必要なパラメータを設定します。
+3. AWS CLI が正しく設定されていることを確認します。
 
    ```bash
    aws configure
    ```
 
-## 初回作成時の手順
-
-### 共通リソースの作成
-
-CodePipeline で共通で使用する以下のリソースを作成する。
-
-- サブスタック用の S3 Bucket
+### サブスタック用の S3 Bucket 作成
 
 ```bash
 aws cloudformation deploy \
@@ -70,7 +91,7 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_IAM
 ```
 
-- CodePipeline と CodeBuild の IAM role/policies
+### CodePipeline と CodeBuild が使用する IAM role/policies 作成
 
 ```bash
 aws cloudformation deploy \
@@ -80,11 +101,12 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-## Pipeline 作成の手順
+## インフラ（ネットワークスタック、セキュリティスタック）パイプライン
 
 ### ダミースタック の作成
 
-Pipeline 作成時に作成対象のスタックが無いとドリフト検知と変更セットのステージ作成でエラーになるため、予めダミーのリソースを同名のスタックで作成しておく。
+パイプライン作成時に作成対象のスタックが無いとドリフト検知と変更セットのステージ作成でエラーになるため、予めダミーのリソースを同名のスタックで作成しておきます。
+既にスタックを作成している場合にはこの手順は必要ありません。
 
 ```bash
 aws cloudformation deploy \
@@ -93,9 +115,9 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_IAM
 ```
 
-### Pipeline の作成
+### パイプラインの作成
 
-CICD スタックをデプロイする。
+以下のコマンドでインフラパイプラインスタックを作成します。（ネットワークスタックの場合）
 
 ```bash
 aws cloudformation deploy \
@@ -104,6 +126,10 @@ aws cloudformation deploy \
   --parameter-overrides file://param/parameters_networkstack.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
+
+## コンテナパイプラインスタック
+
+以下のコマンドでコンテナパイプラインスタックを作成します。
 
 ```bash
 aws cloudformation deploy \
@@ -115,23 +141,33 @@ aws cloudformation deploy \
 
 ## 削除
 
-リソースの削除時は以下のコマンドを実行します。
+スタックの削除時は以下のコマンドを実行します。
+
+### PipelineS3Stack
 
 ```bash
 aws cloudformation delete-stack --stack-name PipelineS3Stack
 ```
 
+### PipelineIamStack
+
 ```bash
 aws cloudformation delete-stack --stack-name PipelineIamStack
 ```
+
+### PipelineNetworkStack
 
 ```bash
 aws cloudformation delete-stack --stack-name PipelineNetworkStack
 ```
 
+### PipelineNetworkStack-CicdStack
+
 ```bash
 aws cloudformation delete-stack --stack-name PipelineNetworkStack-CicdStack
 ```
+
+### Pipeline-ContainerStack-CicdStack
 
 ```bash
 aws cloudformation delete-stack --stack-name Pipeline-ContainerStack-CicdStack
@@ -140,4 +176,4 @@ aws cloudformation delete-stack --stack-name Pipeline-ContainerStack-CicdStack
 ## 注意点
 
 1. S3 バケット名は固定されています。既存のバケットと競合しないように注意してください。
-2. CodePipelineArtifactStoreName は自動的に`codepipeline-ap-northeast-1-691348252728`が使用されます。Codepipeline が未実行の場合はこの Bucket が存在しないので、あらかじめ作成する方がいいかもしれません。（勝手に作成されるかも）
+2. CodePipelineArtifactStoreName は自動的に`codepipeline-ap-northeast-1-<アカウントID>`が使用されます。Codepipeline が未実行の場合はこの Bucket が存在しないので、あらかじめ作成する方がいいかもしれません。（勝手に作成されるかも）
