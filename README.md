@@ -45,6 +45,7 @@ pipeline_infrastructure_sample.yaml にネットワークスタックやセキ�
 - AWS アカウント
 - AWS CLI
 - Git
+- GitHub との接続設定（CodeConnections）
 
 ### インフラパイプライン
 
@@ -176,4 +177,4 @@ aws cloudformation delete-stack --stack-name Pipeline-ContainerStack-CicdStack
 ## 注意点
 
 1. S3 バケット名は固定されています。既存のバケットと競合しないように注意してください。
-2. CodePipelineArtifactStoreName は自動的に`codepipeline-ap-northeast-1-<アカウントID>`が使用されます。Codepipeline が未実行の場合はこの Bucket が存在しないので、あらかじめ作成する方がいいかもしれません。（勝手に作成されるかも）
+2. CodePipelineArtifactStoreName は自動的に`codepipeline-ap-northeast-1-（乱数）`が使用されます。Codepipeline が未実行の場合はこの Bucket が存在しないので、あらかじめ作成する方がいいかもしれません。（勝手に作成されるかも）
