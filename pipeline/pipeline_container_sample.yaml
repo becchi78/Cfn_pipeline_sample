@@ -20,6 +20,12 @@ Parameters:
   BranchName:
     Type: String
     Description: Branch name for source code
+  ClusterName:
+    Type: String
+    Description: Name of the ECS Cluster
+  ServiceName:
+    Type: String
+    Description: Name of the ECS Service
 
 Resources:
   CodeBuildProject:
@@ -101,8 +107,8 @@ Resources:
                 Provider: ECS
                 Version: "1"
               Configuration:
-                ClusterName: "test-cluster"
-                ServiceName: "PipelineService"
+                ClusterName: !Ref ClusterName
+                ServiceName: !Ref ServiceName
                 FileName: "imagedefinitions.json"
                 DeploymentTimeout: 5
               InputArtifacts:
