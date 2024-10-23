@@ -46,11 +46,11 @@ pipeline_infrastructure_sample.yaml にネットワークスタックやセキ�
 - AWS CLI
 - Git
 
-### インフラ
+### インフラパイプライン
 
 - 作成するスタックのテンプレートファイル
 
-### コンテナスタック
+### コンテナパイプライン
 
 - コンテナビルド用のファイル一式
   - Dockerfile
@@ -101,7 +101,7 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-## インフラ（ネットワークスタック、セキュリティスタック）パイプライン
+## インフラパイプラインの作成
 
 ### ダミースタック の作成
 
@@ -117,7 +117,7 @@ aws cloudformation deploy \
 
 ### パイプラインの作成
 
-以下のコマンドでインフラパイプラインスタックを作成します。（ネットワークスタックの場合）
+以下のコマンドでインフラパイプラインを作成します。（ネットワークスタックの場合）
 
 ```bash
 aws cloudformation deploy \
@@ -127,9 +127,9 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
-## コンテナパイプラインスタック
+## コンテナパイプラインの作成
 
-以下のコマンドでコンテナパイプラインスタックを作成します。
+以下のコマンドでコンテナパイプラインを作成します。
 
 ```bash
 aws cloudformation deploy \
