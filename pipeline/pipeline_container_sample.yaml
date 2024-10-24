@@ -32,7 +32,7 @@ Resources:
     Type: "AWS::CodeBuild::Project"
     Properties:
       Name: !Sub Cfn_${StackName}_pipeline_sample_dockerbuild
-      Description: CodeBuild project for docker build of Cfn_${StackName}_pipeline_sample
+      Description: !Sub CodeBuild project for docker build of Cfn_${StackName}_pipeline_sample
       ServiceRole: !ImportValue
         Fn::Sub: "${IAMStackName}-CodeBuildServiceRoleArn"
       Artifacts:
