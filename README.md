@@ -22,12 +22,12 @@ Cfn_pipeline_sample/
 ├── dummy/
 │   └── dummy.yaml ・・・ダミーリソースを作成するテンプレート
 │
-├── param/
+├── parameters/
 │   │── parameters_common.json ・・・pipeline_iam.yamlで使用するパラメータファイル
 │   │── parameters_containerstack.json ・・・コンテナスタックを作成するためのパラメータファイル
 │   └── parameters_networkstack.json ・・・ネットワークスタックを作成するためのパラメータファイル
 │
-├── templates/
+├── pipeline/
 │   │── pipeline_container_sample.yaml ・・・コンテナスタックのCI/CDパイプラインを作成するためのテンプレート
 │   └── pipeline_infrastructure_sample.yaml ・・・インフラ（ネットワークスタックやIAMスタックなど）のCI/CDパイプラインを作成するためのテンプレート
 └── README.md ・・・このREADME
@@ -76,7 +76,7 @@ CodePipeline で共通で使用するリソースを作成します。
    cd Cfn_pipeline_sample
    ```
 
-2. param ディレクトリ下にパラメータファイルを編集し、必要なパラメータを設定します。
+2. parameters ディレクトリ下にパラメータファイルを編集し、必要なパラメータを設定します。
 3. AWS CLI が正しく設定されていることを確認します。
 
    ```bash
@@ -98,7 +98,7 @@ aws cloudformation deploy \
 aws cloudformation deploy \
   --stack-name PipelineIamStack \
   --template-file common/pipeline_iam.yaml \
-  --parameter-overrides file://param/parameters_common.json \
+  --parameter-overrides file://parameters/parameters_common.json \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
@@ -123,8 +123,8 @@ aws cloudformation deploy \
 ```bash
 aws cloudformation deploy \
   --stack-name Pipeline-NetworkStack-CicdStack \
-  --template-file templates/pipeline_infrastructure_sample.yaml \
-  --parameter-overrides file://param/parameters_networkstack.json \
+  --template-file pipeline/pipeline_infrastructure_sample.yaml \
+  --parameter-overrides file://parameters/parameters_networkstack.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
@@ -135,8 +135,8 @@ aws cloudformation deploy \
 ```bash
 aws cloudformation deploy \
   --stack-name Pipeline-ContainerStack-CicdStack \
-  --template-file templates/pipeline_container_sample.yaml \
-  --parameter-overrides file://param/parameters_containerstack.json \
+  --template-file pipeline/pipeline_container_sample.yaml \
+  --parameter-overrides file://parameters/parameters_containerstack.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
