@@ -147,8 +147,8 @@ Resources:
                 RoleArn: !ImportValue
                   Fn::Sub: "${IAMStackName}-CodePipelineServiceRoleArn"
                 StackName: !Ref StackName
-                TemplateConfiguration: SourceArtifact::param/parameters.json
-                TemplatePath: SourceArtifact::root-template.yaml
+                TemplateConfiguration: SourceArtifact::parameters/parameters.json
+                TemplatePath: SourceArtifact::templates/root-template.yaml
               InputArtifacts:
                 - Name: SourceArtifact
               RunOrder: 1
