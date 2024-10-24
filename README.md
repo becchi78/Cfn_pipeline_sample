@@ -87,7 +87,7 @@ CodePipeline で共通で使用するリソースを作成します。
 
 ```bash
 aws cloudformation deploy \
-  --stack-name PipelineS3Stack \
+  --stack-name Pipeline-S3Stack \
   --template-file common/pipeline_s3.yaml \
   --capabilities CAPABILITY_IAM
 ```
@@ -96,7 +96,7 @@ aws cloudformation deploy \
 
 ```bash
 aws cloudformation deploy \
-  --stack-name PipelineIamStack \
+  --stack-name Pipeline-IamStack \
   --template-file common/pipeline_iam.yaml \
   --parameter-overrides file://parameters/parameters_common.json \
   --capabilities CAPABILITY_NAMED_IAM
@@ -111,7 +111,7 @@ aws cloudformation deploy \
 
 ```bash
 aws cloudformation deploy \
-  --stack-name PipelineNetworkStack \
+  --stack-name Pipeline-NetworkStack \
   --template-file dummy/dummy.yaml \
   --capabilities CAPABILITY_IAM
 ```
@@ -147,25 +147,25 @@ aws cloudformation deploy \
 ### PipelineS3Stack
 
 ```bash
-aws cloudformation delete-stack --stack-name PipelineS3Stack
+aws cloudformation delete-stack --stack-name Pipeline-S3Stack
 ```
 
 ### PipelineIamStack
 
 ```bash
-aws cloudformation delete-stack --stack-name PipelineIamStack
+aws cloudformation delete-stack --stack-name Pipeline-IamStack
 ```
 
 ### PipelineNetworkStack
 
 ```bash
-aws cloudformation delete-stack --stack-name PipelineNetworkStack
+aws cloudformation delete-stack --stack-name Pipeline-NetworkStack
 ```
 
 ### PipelineNetworkStack-CicdStack
 
 ```bash
-aws cloudformation delete-stack --stack-name PipelineNetworkStack-CicdStack
+aws cloudformation delete-stack --stack-name Pipeline-NetworkStack-CicdStack
 ```
 
 ### Pipeline-ContainerStack-CicdStack
