@@ -27,7 +27,7 @@ Cfn_pipeline_sample/
 │   │── parameters_containerstack.json ・・・コンテナスタックを作成するためのパラメータファイル
 │   └── parameters_networkstack.json ・・・ネットワークスタックを作成するためのパラメータファイル
 │
-├── pipeline/
+├── templates/
 │   │── pipeline_container_sample.yaml ・・・コンテナスタックのCI/CDパイプラインを作成するためのテンプレート
 │   └── pipeline_infrastructure_sample.yaml ・・・インフラ（ネットワークスタックやIAMスタックなど）のCI/CDパイプラインを作成するためのテンプレート
 └── README.md ・・・このREADME
@@ -123,7 +123,7 @@ aws cloudformation deploy \
 ```bash
 aws cloudformation deploy \
   --stack-name Pipeline-NetworkStack-CicdStack \
-  --template-file pipeline/pipeline_infrastructure_sample.yaml \
+  --template-file templates/pipeline_infrastructure_sample.yaml \
   --parameter-overrides file://param/parameters_networkstack.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
@@ -135,7 +135,7 @@ aws cloudformation deploy \
 ```bash
 aws cloudformation deploy \
   --stack-name Pipeline-ContainerStack-CicdStack \
-  --template-file pipeline/pipeline_container_sample.yaml \
+  --template-file templates/pipeline_container_sample.yaml \
   --parameter-overrides file://param/parameters_containerstack.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
