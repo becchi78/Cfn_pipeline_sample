@@ -134,9 +134,9 @@ aws cloudformation deploy \
 
 ```bash
 aws cloudformation deploy \
-  --stack-name Pipeline-ContainerStack-CicdStack \
-  --template-file pipeline/pipeline_container_sample.yaml \
-  --parameter-overrides file://parameters/parameters_containerstack.json \
+  --stack-name Pipeline-ServerlessStack-CicdStack \
+  --template-file pipeline/pipeline_serverless_sample.yaml \
+  --parameter-overrides file://parameters/parameters_serverless.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
